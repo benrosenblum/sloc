@@ -9,6 +9,7 @@ import (
 	"path"
 	"runtime/pprof"
 	"sort"
+	"strings"
 	"text/tabwriter"
 )
 
@@ -250,8 +251,16 @@ func handleFile(fname string) {
 }
 
 var files []string
+var exclusions []string
 
 func add(n string) {
+	for _, exclusion := range exclusions {
+		if n == exclusion {
+			fmt.Printf("excluding file: %v\n", n)
+			return
+		}
+	}
+
 	fi, err := os.Stat(n)
 	if err != nil {
 		goto invalid
@@ -348,6 +357,7 @@ var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	useJson    = flag.Bool("json", false, "JSON-format output")
 	version    = flag.Bool("V", false, "display version info and exit")
+	exclude    = flag.String("exclude", "", "comma-separated exclusion list")
 )
 
 func main() {
@@ -364,6 +374,10 @@ func main() {
 		}
 		pprof.StartCPUProfile(f)
 		defer pprof.StopCPUProfile()
+	}
+
+	if *exclude != "" {
+		exclusions = strings.Split(*exclude, ",")
 	}
 
 	args := flag.Args()
